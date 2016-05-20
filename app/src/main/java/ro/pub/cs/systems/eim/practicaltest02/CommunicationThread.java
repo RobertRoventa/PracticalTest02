@@ -1,23 +1,11 @@
 package ro.pub.cs.systems.eim.practicaltest02;
 
-import android.provider.SyncStateContract;
-    import android.util.Log;
-    import java.io.BufferedReader;
-    import java.io.IOException;
-    import java.io.PrintWriter;
-    import java.net.Socket;
-import java.util.ArrayList;
 import android.util.Log;
 
-import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.protocol.HTTP;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -32,6 +20,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
 
 
 public class CommunicationThread extends Thread {
@@ -51,21 +40,21 @@ public class CommunicationThread extends Thread {
                 BufferedReader bufferedReader = Utilities.getReader(socket);
                 PrintWriter printWriter = Utilities.getWriter(socket);
                 if (bufferedReader != null && printWriter != null) {
-                    Log.i("asd", "[COMMUNICATION THREAD] Waiting for parameters from client (city / information type)!");
+                    Log.i(Constants.TAG, "[COMMUNICATION THREAD] Waiting for parameters from client (city / information type)!");
                     String city = bufferedReader.readLine();
                     String informationType = bufferedReader.readLine();
-                    String data = serverThread.getData();
-//                  //  WeatherForecastInformation weatherForecastInformation = null;
-////                    if (city != null && !city.isEmpty() && informationType != null && !informationType.isEmpty()) {
-////                        if (data.containsKey(city)) {
-////                            Log.i(Constants.TAG, "[COMMUNICATION THREAD] Getting the information from the cache...");
-//                            weatherForecastInformation = data.get(city);
-//                        } else {
-                            Log.i(SyncStateContract.Constants.TAG, "[COMMUNICATION THREAD] Getting the information from the webservice...");
+                    HashMap<String, WeatherForecastInformation> data = serverThread.getData();
+                    WeatherForecastInformation weatherForecastInformation = null;
+                    if (city != null && !city.isEmpty() && informationType != null && !informationType.isEmpty()) {
+                        if (data.containsKey(city)) {
+                            Log.i(Constants.TAG, "[COMMUNICATION THREAD] Getting the information from the cache...");
+                            weatherForecastInformation = data.get(city);
+                        } else {
+                            Log.i(Constants.TAG, "[COMMUNICATION THREAD] Getting the information from the webservice...");
                             HttpClient httpClient = new DefaultHttpClient();
-                            HttpPost httpPost = new HttpPost(SyncStateContract.Constants.WEB_SERVICE_ADDRESS);
+                            HttpPost httpPost = new HttpPost(Constants.WEB_SERVICE_ADDRESS);
                             List<NameValuePair> params = new ArrayList<>();
-                            params.add(new BasicNameValuePair(SyncStateContract.Constants.QUERY_ATTRIBUTE, city));
+                            params.add(new BasicNameValuePair(Constants.QUERY_ATTRIBUTE, city));
                             UrlEncodedFormEntity urlEncodedFormEntity = new UrlEncodedFormEntity(params, HTTP.UTF_8);
                             httpPost.setEntity(urlEncodedFormEntity);
                             ResponseHandler<String> responseHandler = new BasicResponseHandler();
@@ -134,15 +123,22 @@ public class CommunicationThread extends Thread {
                         Log.e(Constants.TAG, "[COMMUNICATION THREAD] Error receiving parameters from client (city / information type)!");
                     }
                 } else {
-                    Log.e(SyncStateContract.Constants.TAG, "[COMMUNICATION THREAD] BufferedReader / PrintWriter are null!");
+                    Log.e(Constants.TAG, "[COMMUNICATION THREAD] BufferedReader / PrintWriter are null!");
                 }
                 socket.close();
             } catch (IOException ioException) {
-                Log.e("ASD", "[COMMUNICATION THREAD] An exception has occurred: " + ioException.getMessage());
-
+                Log.e(Constants.TAG, "[COMMUNICATION THREAD] An exception has occurred: " + ioException.getMessage());
+                if (Constants.DEBUG) {
+                    ioException.printStackTrace();
+                }
+            } catch (JSONException jsonException) {
+                Log.e(Constants.TAG, "[COMMUNICATION THREAD] An exception has occurred: " + jsonException.getMessage());
+                if (Constants.DEBUG) {
+                    jsonException.printStackTrace();
+                }
             }
         } else {
-            Log.e("ASD", "[COMMUNICATION THREAD] Socket is null!");
+            Log.e(Constants.TAG, "[COMMUNICATION THREAD] Socket is null!");
         }
     }
 
